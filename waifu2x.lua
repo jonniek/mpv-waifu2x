@@ -22,7 +22,7 @@ local conf = {
   png = false, --jpg png toggle for screenshots, convert image tries to keep original
   waifupath = "/home/anon/software/waifu2x/", --path to dir where waifu2x.lua is, trail with /
   output = "~/Pictures/waifu2x/", --path to save screenshots to, image converts are saved to their original directory
-  tmp = "/tmp/", --tmp folder where images
+  tmp = "/tmp/", --tmp folder where images/screenshots are stored before converting
   convert_timestamp = false, --add a timestamp on convert, making sure no overrides happen
 
   --favorite shortcut
@@ -32,7 +32,7 @@ local conf = {
   --use strings
   favorite = { [0]="2x", [1]="2", [3]="Screenshot"},
 
-  force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments in waifu2x function os.captures
+  force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments
 }
 read_options(conf, scriptoptions.name)
 
@@ -97,16 +97,31 @@ function waifu2x(cmd, silent)
   --#### CODE FOR SCREEN SHOT CONVERT ####
   if cmd[3] == "Screenshot" then
     if not silent then mp.osd_message("Taking waifu2x screenshot!") end
+
+    --Use subtitles if they are visible
     local subtitles = mp.get_property("sub-text")
     if subtitles == "" then subtitles = "video" else subtitles = "subtitles" end
+
+    --take the tmp screenshot
     mp.commandv("screenshot-to-file", conf.tmp.."mpv-waifu2x-screenshot.png", subtitles)
 
-    arguments[4] = "-i "..conf.tmp.."mpv-waifu2x-screenshot.png "
+    --the path for the screenshot file
+    local screenshotfile = conf.tmp.."mpv-waifu2x-screenshot.png"
+
+    --output file without extension
+    local outputfile = conf.output..timestamp
+
+    --set input argument
+    arguments[4] = "-i "..screenshotfile
+
+    --set output argument and if needed an additional convert command
     if conf.png then
-      arguments[5] = "-o "..conf.output..timestamp..".png"
+      --for a png just save it directly
+      arguments[5] = "-o "..outputfile..".png"
     else
-      arguments[5] = "-o "..conf.tmp.."mpv-waifu2x-screenshot.png"
-      additional = chain.."convert "..conf.tmp.."mpv-waifu2x-screenshot.png "..conf.output..timestamp..".jpg"
+      --for a jpg save a tmp png screenshot and convert it to the final one
+      arguments[5] = "-o "..screenshotfile
+      additional = chain.."convert "..screenshotfile.." "..outputfile..".jpg"
     end
   else
     --#### CODE FOR IMAGE CONVERT ####
@@ -129,15 +144,20 @@ function waifu2x(cmd, silent)
     local ext = mp.get_property("filename"):match("%..*$")
     if not ext then ext = "" end
 
-    local tmp = conf.tmp.."waifu2x-convert.png"
+    --create output filename
+    local filename = pathout.."-w2x"..timestamp..ext
+
+    --add input file argument
     arguments[4] = "-i "..path
+
     if ext == ".png" or ext == "" then
       --for a png just save it directly
-      arguments[5] = " -o "..pathout.."-w2x"..timestamp..ext
+      arguments[5] = " -o "..filename
     else
-      --for a jpg save a tmp png file and convert it to the final one
+      --for a jpg(and others?) save a tmp png file and convert it to the final one
+      local tmp = conf.tmp.."waifu2x-convert.png"
       arguments[5] = " -o "..tmp
-      additional = chain.."convert "..tmp.." "..pathout.."-w2x"..timestamp..ext
+      additional = chain.."convert "..tmp.." "..filename
     end
   end
 

@@ -1,10 +1,13 @@
 ##MPV waifu2x
   
-A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. Example below.
+A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. Windows version is untested for another week or so at least, if you have issues open a ticket. Example below.
 
 ![alt text](https://i.imgur.com/A4rPNpm.jpg "preview image")  
 ###Requirements
 -  [Waifu2x and all it's dependencies](https://github.com/nagadomi/waifu2x)
+-  The script uses the torch commands you can find in above link, test waifu2x out first with those
+-  This requires imagemagicks `convert` command when using jpg output, test that `convert image.png image.jpg` works
+-  The script uses standard output of `pwd` and `%d%`(untested) for creating absolute paths if nececcary
 
 ###How to use
 -  open menu with waifu2x keybind
@@ -12,7 +15,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  choose upscale amount
 -  choose noise reduction level
 -  the image will be created in 1-10 seconds
--  I highly suggest using [easy crop](https://github.com/aidanholm/mpv-easycrop) if you want to take cropped screenshots
+-  I highly suggest using [easy crop by aidanholm](https://github.com/aidanholm/mpv-easycrop) if you want to take cropped screenshots
 -  you can save one favorite setting to acces with a single keybind without opening the menu, check the config.favorite in lua for details. Default is Screenshot 2x noise-reduction 2.
 -  Screenshot will include subtitles if they are visible, hide subtitles(default v) to not capture them in the screenshot.
 
