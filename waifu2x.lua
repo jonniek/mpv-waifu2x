@@ -134,7 +134,7 @@ function waifu2x(cmd, silent)
     local path = mp.get_property("path")
     --check if the path is absolute, if it isnt edit into one
     local check = mp.get_property("path"):sub(1,1)
-    if check ~= "/" and check ~= "\\" then
+    if check ~= "/" and not path:match("^%a:") then
       --combines pwd with the relative path, forming a absolute path
       --needed when files are opened like 'mpv folder/file'
       path = pwd().."/"..path
