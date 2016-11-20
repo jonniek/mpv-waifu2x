@@ -7,7 +7,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  [Waifu2x and all it's dependencies](https://github.com/nagadomi/waifu2x)
 -  The script uses the torch commands you can find in above link, test waifu2x out first with those
 -  This requires imagemagicks `convert` command when using jpg output, test that `convert image.png image.jpg` works
--  The script uses standard output of `pwd` and `%d%`(untested) for creating absolute paths if nececcary
+-  The script uses standard output of `pwd` and `%cd%`(untested) for creating absolute paths if nececcary
 
 ###How to use
 -  open menu with waifu2x keybind

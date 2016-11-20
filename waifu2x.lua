@@ -24,13 +24,14 @@ local conf = {
   output = "~/Pictures/waifu2x/", --path to save screenshots to, image converts are saved to their original directory
   tmp = "/tmp/", --tmp folder where images/screenshots are stored before converting
   convert_timestamp = false, --add a timestamp on convert, making sure no overrides happen
+  pictures = {".png", ".jpg", ".jpeg", ""}, --file extension allowed for converting, convert will be hidden on other extensions
 
   --favorite shortcut
   --"0x"/"2x"   -scale 
   --"no"/"0"-"3"   -noise
   --"Screenshot"/"Image convert"   -screenshot or source image
   --use strings
-  favorite = { [0]="2x", [1]="2", [3]="Screenshot"},
+  favorite = { [1]="Screenshot", [2]="2x", [3]="2", },
 
   force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments
 }
@@ -38,10 +39,10 @@ read_options(conf, scriptoptions.name)
 
 --global variables
 local state = {
-  listtype = { [0] = "Screenshot", [1] = "Image convert"},
-  listsize = { [0] = "0x", [1] = "2x"},
-  listnoise = { [0] = "no", [1] = "0", [2] = "1", [3] = "2", [4] = "3" },
-  cursor = 0,
+  listtype = { [1] = "Screenshot", [2] = "Image convert"},
+  listsize = { [1] = "0x", [2] = "2x"},
+  listnoise = { [1] = "no", [2] = "0", [3] = "1", [4] = "2", [5] = "3" },
+  cursor = 1,
   selection ={},
   step=0,
   length=0,
@@ -64,22 +65,22 @@ function waifu2x(cmd, silent)
   --parse the user inputted options
   local scale = ""
   local noise = ""
-  if cmd[1] == "no" and cmd[0] == "0x" then
-    if cmd[3] == "Screenshot" then
+  if cmd[3] == "no" and cmd[2] == "0x" then
+    if cmd[1] == "Screenshot" then
       mp.commandv("screenshot")
       mp.osd_message("No scale or noise, taking normal screenshot")
     else
       mp.osd_message("No scale or noise, not converting")
     end
     return
-  elseif cmd[1] == "no" then
+  elseif cmd[3] == "no" then
     scale = "scale"
-  elseif cmd[1] ~= "no" and cmd[0] ~= "0x" then
+  elseif cmd[3] ~= "no" and cmd[2] ~= "0x" then
     scale = "noise_scale"
-  elseif cmd[1] ~= "no" and cmd[0] == "0x" then
+  elseif cmd[3] ~= "no" and cmd[2] == "0x" then
     scale = "noise"
   end
-  if cmd[1] ~= "no" then noise = "-noise_level "..cmd[1] end
+  if cmd[3] ~= "no" then noise = "-noise_level "..cmd[3] end
 
   --check cudnn support
   local cudnn = ""
@@ -95,7 +96,7 @@ function waifu2x(cmd, silent)
   local additional = ""
 
   --#### CODE FOR SCREEN SHOT CONVERT ####
-  if cmd[3] == "Screenshot" then
+  if cmd[1] == "Screenshot" then
     if not silent then mp.osd_message("Taking waifu2x screenshot!") end
 
     --Use subtitles if they are visible
@@ -141,7 +142,7 @@ function waifu2x(cmd, silent)
 
     --get path and name without extension, so we can add suffix in between.
     local pathout = path:gsub("%..*$","")
-    local ext = mp.get_property("filename"):match("%..*$")
+    local ext = mp.get_property("filename"):match("^.+(%..+)$")
     if not ext then ext = "" end
 
     --create output filename
@@ -213,39 +214,39 @@ end
 --selects currently selected option and moves forward in state
 function enter()
   if state.step == 0 then
-    state.selection[3] = state.listtype[state.cursor]
+    state.selection[1] = state.listtype[state.cursor]
     state.step = 1
-    state.cursor = 0
+    state.cursor = 1
     update()
   elseif state.step == 1 then 
-    state.selection[0] = state.listsize[state.cursor]
+    state.selection[2] = state.listsize[state.cursor]
     state.step = 2
-    state.cursor = 0
+    state.cursor = 1
     update()
   elseif state.step == 2 then 
-    state.selection[1] = state.listnoise[state.cursor]
+    state.selection[3] = state.listnoise[state.cursor]
     removekeybinds()
     waifu2x(state.selection)
     state.selection = {}
     state.step = 0
-    state.cursor = 0
+    state.cursor = 1
   end
 end
 
 function navup()
-  if state.cursor~=0 then
+  if state.cursor~=1 then
     state.cursor = state.cursor-1
   else
-    state.cursor = state.length-1
+    state.cursor = state.length
   end
   update()
 end
 
 function navdown()
-  if state.cursor~=state.length-1 then
+  if state.cursor~=state.length then
     state.cursor = state.cursor+1
   else
-    state.cursor = 0
+    state.cursor = 1
   end
   update()
 end
@@ -260,26 +261,43 @@ function output(list, settings)
   local cursorsuffix = "<"
   local dur = conf.osd_duration_seconds
   local cursor = state.cursor
+  local tmplist = {}
 
   --length of the currenly handled list, needed for cursor to work properly
+  --filter out convert option if not an image
   local length = 0
   for index, item in pairs(list) do
-    length = length + 1
+    if state.step == 0 and index == 2 and not ispicture() then
+    else
+      length = length + 1
+      tmplist[index] = item
+    end
   end
   state.length=length
 
   --output loop
   local output = header
-  local b = 0
-  for a=b,10,1 do
-    if a == length then break end
-    if a == cursor then
-      output = output..cursorprefix..list[a]..cursorsuffix.."\n"
+  for index, value in ipairs(tmplist) do
+    if state.step == 0 and index == 2 and not ispicture() then
     else
-        output = output..list[a].."\n"
+      if index == cursor then
+        output = output..cursorprefix..value..cursorsuffix.."\n"
+      else
+        output = output..value.."\n"
+      end
     end
   end
   mp.osd_message(output, dur)
+end
+
+function ispicture()
+  local ispic = false
+  local ext = mp.get_property("filename"):match("^.+(%..+)$")
+  if not ext then ext = "" end
+  for i, value in pairs(conf.pictures) do
+    if value:lower() == ext:lower() then ispic = true ; break end
+  end
+  return ispic
 end
 
 function addkeybinds()
@@ -303,14 +321,14 @@ if not conf.use_dynamic_keybinds then
 end
 
 function reset()
-  state.cursor=0
+  state.cursor=1
   state.step=0
   state.selection={}
   update()
 end
 
 function favorite()
-  mp.osd_message("Waifu2x favorite shortcut\n\n"..conf.favorite[3].."\nscale: "..conf.favorite[0].."\nnoise-r: "..conf.favorite[1])
+  mp.osd_message("Waifu2x favorite shortcut\n\n"..conf.favorite[1].."\nscale: "..conf.favorite[2].."\nnoise-r: "..conf.favorite[3])
   waifu2x(conf.favorite, true)
 end
 
