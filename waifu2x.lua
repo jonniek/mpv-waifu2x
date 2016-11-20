@@ -15,12 +15,15 @@ local scriptoptions = {
 
 --below are options available to change, can be overridden in lua-settings/waifu2x.conf
 local conf = {
+  linux_over_windows = true,  --linux windows toggle
   use_dynamic_keybinds = true, --waifu2x keybind will register dynamic keys for navigating that will temporarily override their original keybinding
   local_waifu = true, --false not implemented yet, looking for a good webapi for that
   osd_duration_seconds = 4,
   png = false, --jpg png toggle for screenshots, convert image tries to keep original
   waifupath = "/home/anon/software/waifu2x/", --path to dir where waifu2x.lua is, trail with /
-  output = "~/Pictures/waifu2x/", --path to save screenshots to, image converts are saved to same directory
+  output = "~/Pictures/waifu2x/", --path to save screenshots to, image converts are saved to their original directory
+  tmp = "/tmp/", --tmp folder where images
+  convert_timestamp = false, --add a timestamp on convert, making sure no overrides happen
 
   --favorite shortcut
   --"0x"/"2x"   -scale 
@@ -29,77 +32,143 @@ local conf = {
   --use strings
   favorite = { [0]="2x", [1]="2", [3]="Screenshot"},
 
-  force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments in waifu2x funtion os.captures
+  force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments in waifu2x function os.captures
 }
 read_options(conf, scriptoptions.name)
 
 --global variables
 local state = {
-  cursor = 0,
-  
   listtype = { [0] = "Screenshot", [1] = "Image convert"},
-
   listsize = { [0] = "0x", [1] = "2x"},
-
   listnoise = { [0] = "no", [1] = "0", [2] = "1", [3] = "2", [4] = "3" },
-
+  cursor = 0,
   selection ={},
   step=0,
   length=0,
   keybinds_active = false,
 }
 
+--cmd: list with configs, see conf.favorite for exampl
+--silent: dont use osd messages - used with favorite()
 function waifu2x(cmd, silent)
+  --remove dynamic keybinds
   removekeybinds()
-  local cudnn = ""
-  if conf.force_cudnn then cudnn = " -force_cudnn 1" end
+
+  --get a timestamp for possible filenames
+  local timestamp = os.time()
+
+  --representation for chaining commands
+  local chain = " & "
+  if conf.linux_over_windows then chain = " ; " end
+
+  --parse the user inputted options
   local scale = ""
   local noise = ""
   if cmd[1] == "no" and cmd[0] == "0x" then
-    mp.commandv("screenshot")
-    mp.osd_message("No scale or noise, taking normal screenshot")
+    if cmd[3] == "Screenshot" then
+      mp.commandv("screenshot")
+      mp.osd_message("No scale or noise, taking normal screenshot")
+    else
+      mp.osd_message("No scale or noise, not converting")
+    end
     return
   elseif cmd[1] == "no" then
-    scale = "scale "
+    scale = "scale"
   elseif cmd[1] ~= "no" and cmd[0] ~= "0x" then
-    scale = "noise_scale "
+    scale = "noise_scale"
   elseif cmd[1] ~= "no" and cmd[0] == "0x" then
-    scale = "noise "
+    scale = "noise"
   end
-  if cmd[1] ~= "no" then noise = "-noise_level "..cmd[1].." " end
+  if cmd[1] ~= "no" then noise = "-noise_level "..cmd[1] end
 
+  --check cudnn support
+  local cudnn = ""
+  if conf.force_cudnn then cudnn = "-force_cudnn 1" end
+
+  --arguments for torch command
+  local arguments = {}
+  arguments[1] = cudnn
+  arguments[2] = "-m "..scale
+  arguments[3] = noise
+
+  --initialize variable for additional commands
+  local additional = ""
+
+  --#### CODE FOR SCREEN SHOT CONVERT ####
   if cmd[3] == "Screenshot" then
     if not silent then mp.osd_message("Taking waifu2x screenshot!") end
     local subtitles = mp.get_property("sub-text")
-    local timestamp = os.time()
     if subtitles == "" then subtitles = "video" else subtitles = "subtitles" end
+    mp.commandv("screenshot-to-file", conf.tmp.."mpv-waifu2x-screenshot.png", subtitles)
 
-    mp.commandv("screenshot-to-file", "/tmp/mpv-waifu2x-screenshot.png", subtitles)
-
+    arguments[4] = "-i "..conf.tmp.."mpv-waifu2x-screenshot.png "
     if conf.png then
-      os.capture("cd "..conf.waifupath.."; th waifu2x.lua"..cudnn.." -m "..scale..noise.."-i /tmp/mpv-waifu2x-screenshot.png -o "..conf.output..timestamp..".png")
+      arguments[5] = "-o "..conf.output..timestamp..".png"
     else
-      os.capture("cd "..conf.waifupath.."; th waifu2x.lua"..cudnn.." -m "..scale..noise.."-i /tmp/mpv-waifu2x-screenshot.png -o /tmp/mpv-waifu2x-screenshot.png; convert /tmp/mpv-waifu2x-screenshot.png "..conf.output..timestamp..".jpg")
+      arguments[5] = "-o "..conf.tmp.."mpv-waifu2x-screenshot.png"
+      additional = chain.."convert "..conf.tmp.."mpv-waifu2x-screenshot.png "..conf.output..timestamp..".jpg"
     end
   else
+    --#### CODE FOR IMAGE CONVERT ####
     if not silent then mp.osd_message("Converting to a waifu2x image!") end
+
+    --use timestamp only if specified
+    if not conf.convert_timestamp then timestamp = "" end
+
     local path = mp.get_property("path")
+    --check if the path is absolute, if it isnt edit into one
     local check = mp.get_property("path"):sub(1,1)
-    local pwd = os.capture("pwd")
-    if check ~= "/" then
-      path = pwd.."/"..path
+    if check ~= "/" and check ~= "\\" then
+      --combines pwd with the relative path, forming a absolute path
+      --needed when files are opened like 'mpv folder/file'
+      path = pwd().."/"..path
     end
+
+    --get path and name without extension, so we can add suffix in between.
     local pathout = path:gsub("%..*$","")
     local ext = mp.get_property("filename"):match("%..*$")
-    local tmp = "/tmp/waifu2x-convert.png"
-    if ext == ".png" then
-      os.capture("cd "..conf.waifupath.."; th waifu2x.lua"..cudnn.." -m "..scale..noise.."-i "..path.." -o "..pathout.."-w2x"..".png")
+    if not ext then ext = "" end
+
+    local tmp = conf.tmp.."waifu2x-convert.png"
+    arguments[4] = "-i "..path
+    if ext == ".png" or ext == "" then
+      --for a png just save it directly
+      arguments[5] = " -o "..pathout.."-w2x"..timestamp..ext
     else
-      os.capture("cd "..conf.waifupath.."; th waifu2x.lua"..cudnn.." -m "..scale..noise.."-i "..path.." -o "..tmp.."; convert "..tmp.." "..pathout.."-w2x"..ext)
+      --for a jpg save a tmp png file and convert it to the final one
+      arguments[5] = " -o "..tmp
+      additional = chain.."convert "..tmp.." "..pathout.."-w2x"..timestamp..ext
     end
+  end
+
+  --CD into the waifu2x directory. The script cannot be run from elsewhere.
+  local output = "cd "..conf.waifupath..chain
+  --start torch command
+  output = output.."th waifu2x.lua"
+  --loop through the arguments for torch command
+  for k,value in ipairs(arguments) do
+    output = output.." "..value
+  end
+  --add a additional convert command if needed
+  output = output..additional
+
+  --print(output) --for testing
+
+  --execute command
+  os.capture(output)
+  mp.osd_message("Success")
+end
+
+--print working directory
+function pwd()
+  if conf.linux_over_windows then
+    return os.capture("pwd")
+  else
+    return os.capture("echo %cd%")
   end
 end
 
+--capture command line output
 function os.capture(cmd, raw)
   local f = assert(io.popen(cmd, 'r'))
   local s = assert(f:read('*a'))
@@ -107,6 +176,7 @@ function os.capture(cmd, raw)
   return string.sub(s, 0, -2)
 end
 
+--visual update function, called on navigation and init
 function update()
   addkeybinds()
   timer:kill()
@@ -120,6 +190,7 @@ function update()
   end
 end
 
+--selects currently selected option and moves forward in state
 function enter()
   if state.step == 0 then
     state.selection[3] = state.listtype[state.cursor]
@@ -159,49 +230,34 @@ function navdown()
   update()
 end
 
+--output the state on OSD
+--has a lot of useless stuff because I copy pasted it
 function output(list, settings)
-  --default to global stateiables and hardcoded ones, fiddle below if you want to use arguments or whatnot
-  local header = "Header\n\n"
+  --init variables
+  local header = ""
+  if settings.header then header = settings.header end
   local cursorprefix = ">"
   local cursorsuffix = "<"
-  local concatstr = "..."
   local dur = conf.osd_duration_seconds
-  local showamount = 10
   local cursor = state.cursor
-  if settings.header then header = settings.header end
 
+  --length of the currenly handled list, needed for cursor to work properly
   local length = 0
   for index, item in pairs(list) do
     length = length + 1
   end
   state.length=length
+
+  --output loop
   local output = header
-  if length>0 then
-    local b = cursor - math.floor(showamount/2)
-    local showall, showrest = false, false
-    if b<0 then b=0 end
-    if length <= showamount then
-      b=0
-      showall=true
+  local b = 0
+  for a=b,10,1 do
+    if a == length then break end
+    if a == cursor then
+      output = output..cursorprefix..list[a]..cursorsuffix.."\n"
+    else
+        output = output..list[a].."\n"
     end
-    if b > math.max(length-showamount-1, 0) then 
-      b=length-showamount
-      showrest=true
-    end
-    if b > 0 and not showall then output=output..concatstr.."\n" end
-    for a=b,b+showamount-1,1 do
-      if a == length then break end
-      if a == cursor then
-        output = output..cursorprefix..list[a]..cursorsuffix.."\n"
-      else
-          output = output..list[a].."\n"
-      end
-      if a == b+showamount-1 and not showall and not showrest then
-        output=output..concatstr
-      end
-    end
-  else
-      output = ""
   end
   mp.osd_message(output, dur)
 end
