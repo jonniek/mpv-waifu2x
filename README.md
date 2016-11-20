@@ -14,6 +14,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  the image will be created in 1-10 seconds
 -  I highly suggest using [easy crop](https://github.com/aidanholm/mpv-easycrop) if you want to take cropped screenshots
 -  you can save one favorite setting to acces with a single keybind without opening the menu, check the config.favorite in lua for details. Default is Screenshot 2x noise-reduction 2.
+-  Screenshot will include subtitles if they are visible, hide subtitles(default v) to not capture them in the screenshot.
 
 ###Keybindings
 -  "waifu2x" - default CTRL+S
