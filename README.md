@@ -4,9 +4,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 
 ![alt text](https://i.imgur.com/A4rPNpm.jpg "preview image")  
 ###Requirements
--  Waifu2x and all it's dependencies
-  -  for now there is no option to use a website service
-  -  [waifu2x installation instructions](https://github.com/nagadomi/waifu2x)
+-  [Waifu2x and all it's dependencies](https://github.com/nagadomi/waifu2x)
 
 ###How to use
 -  open menu with waifu2x keybind
@@ -15,6 +13,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  choose noise reduction level
 -  the image will be created in 1-10 seconds
 -  I highly suggest using [easy crop](https://github.com/aidanholm/mpv-easycrop) if you want to take cropped screenshots
+-  you can save one favorite setting to acces with a single keybind without opening the menu, check the config.favorite in lua for details. Default is Screenshot 2x noise-reduction 2.
 
 ###Keybindings
 -  "waifu2x" - default CTRL+S
