@@ -17,8 +17,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 
 ###Keybindings
 -  "waifu2x" - default CTRL+S
--  "waifu2x-favorite" - default CTRL+X
-  
+-  "waifu2x-favorite" - default CTRL+X  
 -  "waifu2x-up" - default dynamic key UP
 -  "waifu2x-down" - default dynamic key DOWN
 -  "waifu2x-enter" - default dynamic key ENTER
