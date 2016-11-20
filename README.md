@@ -22,7 +22,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  "waifu2x-down" - default dynamic key DOWN
 -  "waifu2x-enter" - default dynamic key ENTER
 
-Dynamic means that the keybind will be active and override that key only when the menu is visible. Change keybinds in input conf with `KEY script-binding waifu2x`
+Dynamic means that the keybind will be active and override that key only when the menu is visible. You can disable dynamic keys and force static ones in the conf variable in the lua. Change keybinds in input conf with `KEY script-binding waifu2x`
 
 
 ###TODO
