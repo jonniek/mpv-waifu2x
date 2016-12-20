@@ -322,6 +322,7 @@ end
 
 function waifu2xsend(arg1, arg2, arg3, silent)
   local list = {arg1, arg2, arg3}
+  if silent == "false" then silent = false end
   waifu2x(list, silent)
 end
 
