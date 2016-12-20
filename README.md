@@ -1,6 +1,6 @@
 ##MPV waifu2x
   
-A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. Windows version is untested for another week or so at least, if you have issues open a ticket. Example below.
+A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. Windows version is untested temporarily, if you have issues/had to fix stuff open a ticket please. Example below.
 
 ![alt text](https://i.imgur.com/A4rPNpm.jpg "preview image")  
 ###Requirements
@@ -16,12 +16,11 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  choose noise reduction level
 -  the image will be created in 1-10 seconds
 -  I highly suggest using [easy crop by aidanholm](https://github.com/aidanholm/mpv-easycrop) if you want to take cropped screenshots
--  you can save one favorite setting to acces with a single keybind without opening the menu, check the config.favorite in lua for details. Default is Screenshot 2x noise-reduction 2.
--  Screenshot will include subtitles if they are visible, hide subtitles(default v) to not capture them in the screenshot.
+-  Screenshot will include subtitles if they are visible, hide subtitles(default v) to not capture them in the screenshot
+-  you can bind your own keys for waifu2x if you do not want to use the osd-gui, ex. `alt+x script-message waifu2x-send screenshot 2x 2` in input.conf. Available options are image type, rezise, noise reduction and silent: [screenshot | image] [2x | 0x ] [no | 0 | 1 | 2 | 3] [true | false].
 
 ###Keybindings
 -  "waifu2x" - default CTRL+S
--  "waifu2x-favorite" - default CTRL+X  
 -  "waifu2x-up" - default dynamic key UP
 -  "waifu2x-down" - default dynamic key DOWN
 -  "waifu2x-enter" - default dynamic key ENTER
