@@ -26,20 +26,13 @@ local conf = {
   convert_timestamp = false, --add a timestamp on convert, making sure no overrides happen
   pictures = {".png", ".jpg", ".jpeg", ""}, --file extension allowed for converting, convert will be hidden on other extensions
 
-  --favorite shortcut
-  --"0x"/"2x"   -scale 
-  --"no"/"0"-"3"   -noise
-  --"Screenshot"/"Image convert"   -screenshot or source image
-  --use strings
-  favorite = { [1]="Screenshot", [2]="2x", [3]="2", },
-
   force_cudnn = false, --untested, if it doesnt work its probably in the order of arguments
 }
 read_options(conf, scriptoptions.name)
 
 --global variables
 local state = {
-  listtype = { [1] = "Screenshot", [2] = "Image convert"},
+  listtype = { [1] = "screenshot", [2] = "image"},
   listsize = { [1] = "0x", [2] = "2x"},
   listnoise = { [1] = "no", [2] = "0", [3] = "1", [4] = "2", [5] = "3" },
   cursor = 1,
@@ -66,7 +59,7 @@ function waifu2x(cmd, silent)
   local scale = ""
   local noise = ""
   if cmd[3] == "no" and cmd[2] == "0x" then
-    if cmd[1] == "Screenshot" then
+    if cmd[1]:lower() == "screenshot" then
       mp.commandv("screenshot")
       mp.osd_message("No scale or noise, taking normal screenshot")
     else
@@ -96,7 +89,7 @@ function waifu2x(cmd, silent)
   local additional = ""
 
   --#### CODE FOR SCREEN SHOT CONVERT ####
-  if cmd[1] == "Screenshot" then
+  if cmd[1]:lower() == "screenshot" then
     if not silent then mp.osd_message("Taking waifu2x screenshot!") end
 
     --Use subtitles if they are visible
@@ -177,7 +170,7 @@ function waifu2x(cmd, silent)
 
   --execute command
   os.capture(output)
-  mp.osd_message("Success")
+  if not silent then mp.osd_message("Success") end
 end
 
 --print working directory
@@ -327,9 +320,9 @@ function reset()
   update()
 end
 
-function favorite()
-  mp.osd_message("Waifu2x favorite shortcut\n\n"..conf.favorite[1].."\nscale: "..conf.favorite[2].."\nnoise-r: "..conf.favorite[3])
-  waifu2x(conf.favorite, true)
+function waifu2xsend(arg1, arg2, arg3, silent)
+  local list = {arg1, arg2, arg3}
+  waifu2x(list, silent)
 end
 
 --setup timer for keybindings
@@ -337,4 +330,4 @@ timer = mp.add_periodic_timer(conf.osd_duration_seconds, removekeybinds)
 timer:kill()
  
 mp.add_key_binding("CTRL+S", scriptoptions.name, reset)
-mp.add_key_binding("CTRL+X", scriptoptions.favorite, favorite)
+mp.register_script_message("waifu2x-send", waifu2xsend)
