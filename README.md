@@ -10,6 +10,7 @@ A mpv script to take screenshots and convert images with the waifu2x machinelear
 -  The script uses standard output of `pwd` and `%cd%`(untested) for creating absolute paths if nececcary
 
 ###How to use
+-  edit all the settings in conf variable in lua to match your system
 -  open menu with waifu2x keybind
 -  choose between screenshot(any kind of file that produces a screenshot) or image convert(safe for at least png/jpg for now)
 -  choose upscale amount
