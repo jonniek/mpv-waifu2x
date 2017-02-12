@@ -35,3 +35,6 @@ Dynamic means that the keybind will be active and override that key only when th
 -  image convert tests for different filetypes
 -  cudnn testing
 -  clean the messy code
+
+#### My other mpv scripts
+- [collection of scripts](https://github.com/donmaiq/mpv-scripts)
