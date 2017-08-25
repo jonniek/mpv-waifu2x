@@ -1,6 +1,6 @@
 ## MPV waifu2x
   
-A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. Windows version is untested temporarily, if you have issues/had to fix stuff open a ticket please. Example below.
+A mpv script to take screenshots and convert images with the waifu2x machinelearning upscale algorithm. This script is deprecated and might not work but I will leave it up here for reference and perhaps a future rework.
 
 ![alt text](https://i.imgur.com/A4rPNpm.jpg "preview image")  
 ### Requirements
